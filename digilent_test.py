@@ -39,12 +39,18 @@ class data:
     """
     handle = ctypes.c_int(0)
     name = ""
+import dwfconstants as constants
 
 # this is the device handle - it will be used by all functions to "address" the connected device
 g_hdwf = ctypes.c_int()
+num_devices = ctypes.c_int()
+dwf.FDwfEnum(constants.enumfilterAll, ctypes.byref(num_devices))
+print(f"Found {num_devices.value} device(s)")
 # connect to the first available device
 dwf.FDwfDeviceOpen(ctypes.c_int(-1), ctypes.byref(g_hdwf))
 data.handle = g_hdwf
+
+    
 
 # Connect to serial port and flush
 # ser = serial.Serial("COM4", 115200)  # Commented out for Mac
