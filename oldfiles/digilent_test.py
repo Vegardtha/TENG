@@ -5,50 +5,36 @@ import matplotlib.pyplot as plt
 from dwfconstants import *
 import ctypes
 import sys
-import serial
 import pandas as pd
 
-# Load the DWF library
-if sys.platform.startswith("win"):
-    dwf = ctypes.cdll.LoadLibrary("dwf.dll")
-elif sys.platform.startswith("darwin"):
-    possible_paths = [
-        "/Applications/WaveForms.app/Contents/Frameworks/dwf.framework/dwf",
-        "/Library/Frameworks/dwf.framework/dwf",
-        "/Library/Frameworks/dwf.framework/dwf"
-    ]
-    for lib_path in possible_paths:
-        try:
-            dwf = ctypes.cdll.LoadLibrary(lib_path)
-            break
-        except OSError:
-            continue
-    else:
-        raise OSError(
-            "Could not find dwf.framework. Please install Digilent WaveForms from:\n"
-            "https://digilent.com/shop/software/digilent-waveforms/\n"
-            f"Searched locations: {possible_paths}"
-        )
-else:
-    dwf = ctypes.cdll.LoadLibrary("libdwf.so")
+from ctypes import *
+
+# 1) Load correct DWF library
+dwf = cdll.LoadLibrary("/Applications/WaveForms.app/Contents/Frameworks/dwf.framework/Versions/A/dwf")
+
+# 2) Correct C function signatures
+dwf.FDwfEnum.argtypes  = [c_int, POINTER(c_int)]
+dwf.FDwfEnum.restype   = None
+
+dwf.FDwfDeviceOpen.argtypes = [c_int, POINTER(c_int)]
+dwf.FDwfDeviceOpen.restype  = c_int
+
+# 3) Enumerate devices using enumfilterAll = 0
+numDevs = c_int()
+dwf.FDwfEnum(0, byref(numDevs))
+print("FDwfEnum says:", numDevs.value)
+
+# 4) Open device
+hdwf = c_int()
+dwf.FDwfDeviceOpen(-1, byref(hdwf))
+print("FDwfDeviceOpen returned handle:", hdwf.value)
 
 
-class data:
-    """
-        stores the device handle and the device name
-    """
-    handle = ctypes.c_int(0)
-    name = ""
-import dwfconstants as constants
-
-# this is the device handle - it will be used by all functions to "address" the connected device
+# Try to open the device
 g_hdwf = ctypes.c_int()
-num_devices = ctypes.c_int()
-dwf.FDwfEnum(constants.enumfilterAll, ctypes.byref(num_devices))
-print(f"Found {num_devices.value} device(s)")
-# connect to the first available device
-dwf.FDwfDeviceOpen(ctypes.c_int(-1), ctypes.byref(g_hdwf))
-data.handle = g_hdwf
+dwf.FDwfDeviceOpen(-1, ctypes.byref(g_hdwf))
+print("Open result:", g_hdwf.value)
+
 
     
 

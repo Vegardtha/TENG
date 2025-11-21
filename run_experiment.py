@@ -1,34 +1,61 @@
 """
-Simple script to run oscilloscope acquisitions using the adjustet_digilent_test module.
-This is the clean file you run - it imports all functions from the module.
+TENG Experiment Runner - SIMPLE VERSION
+Just configure your experiment settings and run!
 """
 
-import adjustet_digilent_test as osc
-import serial
+from utils import TENGExperiment, find_arduino_port
+from config import ExperimentConfig, MotorConfig, OscilloscopeConfig
 
-# Optional: Connect to Arduino serial port
-# Uncomment and adjust the port if you're using Arduino
-# ser = serial.Serial("COM4", 115200)  # Windows
-# ser = serial.Serial("/dev/ttyUSB0", 115200)  # Linux
-# ser = serial.Serial("/dev/cu.usbserial-XXXX", 115200)  # macOS
-# ser.flush()
-ser = None  # Set to None if not using Arduino
 
-# Run the complete acquisition workflow
-osc.run_acquisitions(
-    num_acquisitions=5,           # Number of measurements to take
-    acquisition_time_ms=30,       # Duration of each measurement (ms)
-    sampling_freq=2e6,            # Sampling frequency (2 MHz)
-    trigger_level=0.5,            # Trigger voltage level (V)
-    trigger_channel=0,            # Channel 1 (0-indexed)
-    offset=0,                     # Voltage offset (V)
-    amplitude_range=50,           # Voltage range (±50V)
-    ser=ser,                      # Serial connection for Arduino (or None)
-    output_dir="PrimTest"         # Directory to save CSV files
-)
+# ============================================================================
+# CONFIGURE YOUR EXPERIMENT HERE
+# ============================================================================
 
-# Close serial connection if used
-if ser is not None:
-    ser.close()
+def main():
+    # Auto-detect Arduino port
+    print("Searching for Arduino...")
+    arduino_port = find_arduino_port()
+    
+    if not arduino_port:
+        print("⚠ Could not auto-detect Arduino port")
+        arduino_port = "/dev/cu.usbserial-0001"  # Change this if auto-detect fails
+    else:
+        print(f"✓ Found Arduino: {arduino_port}\n")
+    
+    # Configure your experiment
+    config = ExperimentConfig(
+        name="MyTest",
+        description="TENG impact testing",
+        
+        motor=MotorConfig(
+            port=arduino_port,      # Auto-detected!
+            num_cycles=5            # How many impacts
+        ),
+        
+        oscilloscope=OscilloscopeConfig(
+            sampling_frequency=2e6,     # 2 MHz
+            acquisition_time_ms=30,     # 30 ms recording
+            amplitude_range=5,         # ±5V
+            trigger_level=0.5           # Start recording at 0.5V
+        ),
+        
+        save_plots=True,
+        plot_during_acquisition=False
+    )
+    
+    # Run the experiment
+    print("="*70)
+    print("STARTING EXPERIMENT")
+    print("="*70)
+    print(f"Name: {config.name}")
+    print(f"Cycles: {config.motor.num_cycles}")
+    print(f"Arduino: {config.motor.port}")
+    print("="*70 + "\n")
+    
+    experiment = TENGExperiment(config)
+    experiment.run()
 
-print("\nExperiment complete!")
+
+if __name__ == "__main__":
+    main()
+

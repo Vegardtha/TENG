@@ -1,0 +1,34 @@
+======================================================================
+TENG EXPERIMENT CONFIGURATION
+======================================================================
+
+Experiment: QuickTest
+Description: Quick test with 3 cycles
+Timestamp: 2025-11-21 11:45:22
+
+----------------------------------------------------------------------
+MOTOR SETTINGS
+----------------------------------------------------------------------
+Serial Port: /dev/cu.usbserial-0001
+Baudrate: 115200
+Number of Cycles: 3
+Cycle Delay: 0.0 s
+
+----------------------------------------------------------------------
+OSCILLOSCOPE SETTINGS
+----------------------------------------------------------------------
+Sampling Frequency: 2.0 MHz
+Acquisition Time: 30 ms
+Channel: 1
+Voltage Range: ±50 V
+Voltage Offset: 0.0 V
+Trigger Channel: 1
+Trigger Level: 0.5 V
+Trigger Edge: rising
+
+----------------------------------------------------------------------
+DATA OUTPUT
+----------------------------------------------------------------------
+Output Directory: experiments/QuickTest_20251121_114522
+Save Plots: True
+Real-time Plotting: False
