@@ -19,14 +19,12 @@ class MotorConfig:
     num_cycles: int = 5  # Number of impact cycles
     cycle_delay: float = 0.0  # Additional delay between cycles (seconds)
     
-    # Motor settings (configured in Arduino)
-    # These are reference values - actual control is in Arduino firmware:
-    # - max_speed: 2000 steps/sec
-    # - acceleration: 4000 steps/sec²
-    # - slow_return_speed: 100 steps/sec
-    # - impact_distance: ~100 steps
-    # - dwell_time: 1000 ms
-    # - sleep_time: 3000 ms
+    # Motor physical settings (will be written to Arduino)
+    max_speed: int = 2000          # Maximum speed (steps/sec)
+    acceleration: int = 4000       # Acceleration (steps/sec²)
+    slow_speed: int = 100          # Return speed (steps/sec)
+    dwell_time: int = 1000         # Wait time at impact position (ms)
+    sleep_time: int = 3000         # Delay after cycle completes (ms)
 
 
 @dataclass

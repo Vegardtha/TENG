@@ -3,7 +3,7 @@ TENG Experiment Runner - SIMPLE VERSION
 Just configure your experiment settings and run!
 """
 
-from utils import TENGExperiment, find_arduino_port
+from utils import TENGExperiment, find_arduino_port, upload_firmware_with_config
 from config import ExperimentConfig, MotorConfig, OscilloscopeConfig
 
 
@@ -28,8 +28,13 @@ def main():
         description="TENG impact testing",
         
         motor=MotorConfig(
-            port=arduino_port,      # Auto-detected!
-            num_cycles=5            # How many impacts
+            port=arduino_port,          # Auto-detected!
+            num_cycles=5,               # How many impacts
+            max_speed=2000,             # Impact speed (steps/sec)
+            acceleration=4000,          # Acceleration (steps/sec²)
+            dwell_time=0,            # Wait at impact position (ms)
+            slow_speed=100,             # Return speed (steps/sec)
+            sleep_time=3000             # Delay between cycles (ms)
         ),
         
         oscilloscope=OscilloscopeConfig(
@@ -42,6 +47,10 @@ def main():
         save_plots=True,
         plot_during_acquisition=False
     )
+    
+    # OPTIONAL: Upload firmware with these motor settings
+    # Uncomment to generate Arduino code and upload before running experiment
+    upload_firmware_with_config(config.motor, arduino_board="uno")
     
     # Run the experiment
     print("="*70)

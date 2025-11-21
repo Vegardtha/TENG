@@ -59,7 +59,6 @@ class MotorController:
         if self.ser and self.ser.is_open:
             self.ser.close()
             self.is_connected = False
-            print("✓ Motor controller disconnected")
             
     def trigger_impact_cycle(self, wait_for_completion=True):
         """
@@ -126,10 +125,7 @@ class MotorController:
             cycle_callback: Optional function to call after each cycle (e.g., for data acquisition)
             cycle_delay: Additional delay between cycles (seconds)
         """
-        print(f"\n{'='*60}")
-        print(f"Starting experiment: {num_cycles} impact cycles")
-        print(f"{'='*60}\n")
-        
+
         for cycle_num in range(1, num_cycles + 1):
             print(f"\n--- Cycle {cycle_num}/{num_cycles} ---")
             

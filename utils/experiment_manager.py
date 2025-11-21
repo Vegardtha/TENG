@@ -27,9 +27,6 @@ class TENGExperiment:
         
     def setup(self):
         """Initialize hardware connections and create output directory"""
-        print("\n" + "="*70)
-        print("TENG EXPERIMENT SETUP")
-        print("="*70)
         
         # Create output directory
         self.output_dir = self.config.get_output_directory()
@@ -73,9 +70,7 @@ class TENGExperiment:
             self.config.oscilloscope.acquisition_time_ms,
             self.config.oscilloscope.sampling_frequency
         )
-        
-        print(f"\n✓ Setup complete - Ready for {self.config.motor.num_cycles} cycles")
-        print("="*70 + "\n")
+
         
     def run_single_acquisition(self, cycle_num):
         """Run a single data acquisition (called after each motor cycle)"""
@@ -267,10 +262,6 @@ class TENGExperiment:
     
     def cleanup(self):
         """Disconnect hardware"""
-        print("\n" + "="*70)
-        print("CLEANUP")
-        print("="*70)
-        
         if self.motor:
             self.motor.disconnect()
         if self.oscilloscope:
