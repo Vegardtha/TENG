@@ -4,3 +4,4 @@ simplerun
 .venv/
 __pycache__/
 experiements/
+arduino_platformio/
