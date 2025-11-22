@@ -6,6 +6,8 @@ Main experiment class that coordinates motor and oscilloscope
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import ctypes
+import time
 from datetime import datetime
 from .dwfconstants import trigcondRisingPositive, trigcondFallingNegative
 
@@ -72,15 +74,55 @@ class TENGExperiment:
         )
 
         
-    def run_single_acquisition(self, cycle_num):
-        """Run a single data acquisition (called after each motor cycle)"""
-        print(f"\n  → Acquiring data (cycle {cycle_num})...")
+    def arm_acquisition(self, cycle_num):
+        """Arm oscilloscope for data acquisition (called before motor impact)"""
+        print(f"\n  → Arming oscilloscope (cycle {cycle_num})...")
         
-        # Acquire voltage data
-        voltage_data = self.oscilloscope.acquire_single(
-            self.num_samples,
-            channel=self.config.oscilloscope.channel
-        )
+        # Start acquisition in triggered mode - will wait for trigger event
+        self.oscilloscope.dwf.FDwfAnalogInConfigure(self.oscilloscope.device_handle, 
+                                                     ctypes.c_bool(False), 
+                                                     ctypes.c_bool(True))
+        
+        # Set DIO 1 HIGH (trigger signal)
+        self.oscilloscope.dwf.FDwfDigitalIOOutputSet(self.oscilloscope.device_handle, 
+                                                      ctypes.c_int(0b00000010))
+        
+        print(f"  ✓ Oscilloscope armed and waiting for trigger...")
+        
+        # Store the cycle number for retrieval later
+        self._current_cycle = cycle_num
+    
+    def retrieve_acquisition(self, cycle_num):
+        """Retrieve acquired data (called after motor impact)"""
+        print(f"\n  → Retrieving data (cycle {cycle_num})...")
+        
+        # Wait for acquisition to complete
+        sts = ctypes.c_byte()
+        timeout = 10  # 10 second timeout
+        start_time = time.time()
+        
+        while True:
+            self.oscilloscope.dwf.FDwfAnalogInStatus(self.oscilloscope.device_handle, 
+                                                      ctypes.c_bool(True), 
+                                                      ctypes.byref(sts))
+            if sts.value == 2:  # DwfStateDone
+                break
+            if time.time() - start_time > timeout:
+                print(f"  ⚠ Timeout waiting for trigger!")
+                return None
+            time.sleep(0.01)
+        
+        # Retrieve data
+        data_buffer = (ctypes.c_double * self.num_samples)()
+        self.oscilloscope.dwf.FDwfAnalogInStatusData(self.oscilloscope.device_handle, 
+                                                       self.config.oscilloscope.channel, 
+                                                       data_buffer, 
+                                                       self.num_samples)
+        voltage_data = np.array(data_buffer)
+        
+        # Set DIO 1 LOW
+        self.oscilloscope.dwf.FDwfDigitalIOOutputSet(self.oscilloscope.device_handle, 
+                                                      ctypes.c_int(0b00000000))
         
         # Create timestamp array
         timestamp = self.oscilloscope.create_timestamp_array(
@@ -144,12 +186,17 @@ class TENGExperiment:
             self.setup()
             
             # Run experiment cycles with synchronized acquisition
-            def acquisition_callback(cycle_num):
-                self.run_single_acquisition(cycle_num)
+            # Arm oscilloscope BEFORE impact, retrieve data AFTER impact
+            def pre_callback(cycle_num):
+                self.arm_acquisition(cycle_num)
+            
+            def post_callback(cycle_num):
+                self.retrieve_acquisition(cycle_num)
             
             self.motor.run_experiment_cycles(
                 num_cycles=self.config.motor.num_cycles,
-                cycle_callback=acquisition_callback,
+                pre_cycle_callback=pre_callback,
+                post_cycle_callback=post_callback,
                 cycle_delay=self.config.motor.cycle_delay
             )
             
@@ -168,9 +215,9 @@ class TENGExperiment:
     
     def _generate_summary(self):
         """Generate experiment summary with statistics and plots"""
-        print("\n" + "="*70)
-        print("GENERATING EXPERIMENT SUMMARY")
-        print("="*70)
+
+        print("SUMMARY:")
+
         
         if not self.results:
             print("⚠ No data collected")

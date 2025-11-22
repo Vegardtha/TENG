@@ -89,7 +89,6 @@ class MotorController:
                 if self.ser.in_waiting:
                     msg = self.ser.readline().decode('utf-8', errors='ignore').strip()
                     if msg:
-                        print(f"  Motor: {msg}")
                         # Check if cycle completed
                         if "Sleeping" in msg or "Enter new step count" in msg:
                             break
@@ -116,38 +115,45 @@ class MotorController:
             if msg:
                 print(f"  Motor: {msg}")
                 
-    def run_experiment_cycles(self, num_cycles, cycle_callback=None, cycle_delay=0):
+    def run_experiment_cycles(self, num_cycles, pre_cycle_callback=None, post_cycle_callback=None, cycle_delay=0):
         """
         Run multiple impact cycles for an experiment
         
         Parameters:
             num_cycles: Number of impact cycles to perform
-            cycle_callback: Optional function to call after each cycle (e.g., for data acquisition)
+            pre_cycle_callback: Optional function to call before each cycle (e.g., to arm oscilloscope)
+            post_cycle_callback: Optional function to call after each cycle (e.g., to retrieve data)
             cycle_delay: Additional delay between cycles (seconds)
         """
 
         for cycle_num in range(1, num_cycles + 1):
             print(f"\n--- Cycle {cycle_num}/{num_cycles} ---")
             
+            # Execute pre-cycle callback (e.g., arm oscilloscope before impact)
+            if pre_cycle_callback:
+                try:
+                    pre_cycle_callback(cycle_num)
+                except Exception as e:
+                    print(f"✗ Error in pre-cycle callback: {e}")
+            
             # Trigger impact
             self.trigger_impact_cycle(wait_for_completion=True)
             
-            # Execute callback (e.g., trigger oscilloscope acquisition)
-            if cycle_callback:
+            # Execute post-cycle callback (e.g., retrieve oscilloscope data)
+            if post_cycle_callback:
                 try:
-                    cycle_callback(cycle_num)
+                    post_cycle_callback(cycle_num)
                 except Exception as e:
-                    print(f"✗ Error in cycle callback: {e}")
+                    print(f"✗ Error in post-cycle callback: {e}")
             
             # Additional delay if needed
             if cycle_delay > 0 and cycle_num < num_cycles:
                 print(f"  Waiting {cycle_delay}s before next cycle...")
                 time.sleep(cycle_delay)
         
-        print(f"\n{'='*60}")
-        print(f"✓ Experiment complete: {num_cycles} cycles finished")
-        print(f"{'='*60}\n")
-        
+    
+        print(f" Experiment complete: {num_cycles} cycles finished")
+
     def home_position(self):
         """Move motor to home position (end stop 2)"""
         print("→ Homing motor...")

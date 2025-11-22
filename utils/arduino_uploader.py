@@ -193,9 +193,15 @@ def upload_firmware_with_config(motor_config, arduino_board="uno"):
     
     # Upload to Arduino
     print("\n→ Uploading to Arduino...")
+    
+    # Find PlatformIO CLI
+    pio_path = os.path.expanduser("~/.platformio/penv/bin/pio")
+    if not os.path.exists(pio_path):
+        pio_path = "pio"  # Fallback to system PATH
+    
     try:
         result = subprocess.run(
-            ["pio", "run", "-e", arduino_board, "--target", "upload"],
+            [pio_path, "run", "-e", arduino_board, "--target", "upload"],
             cwd=platformio_dir,
             capture_output=True,
             text=True,
@@ -204,7 +210,6 @@ def upload_firmware_with_config(motor_config, arduino_board="uno"):
         
         if result.returncode == 0:
             print("✓ Firmware uploaded successfully!")
-            print("="*70 + "\n")
             return True
         else:
             print("✗ Upload failed:")

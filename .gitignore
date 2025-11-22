@@ -3,5 +3,5 @@ dwfconstanst.py
 simplerun
 .venv/
 __pycache__/
-experiements/
+experiments/
 arduino_platformio/

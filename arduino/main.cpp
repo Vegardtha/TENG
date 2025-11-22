@@ -9,7 +9,7 @@
 #define AUTO_TRIGGER_PIN 3 // Digital input to trigger autoCycle()
 
 // Stepper configuration
-#define MAX_SPEED 2000    // Max speed in steps per second
+#define MAX_SPEED 4000    // Max speed in steps per second
 #define ACCELERATION 4000 // Acceleration in steps per second^2
 #define SLOW_SPEED 100    // Slower speed for return movement
 #define SLEEP_TIME 3000   // Delay at the end of autoCycle (in ms)

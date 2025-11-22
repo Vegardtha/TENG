@@ -146,7 +146,7 @@ class OscilloscopeController:
         self.dwf.FDwfDigitalIOOutputEnableSet(self.device_handle, ctypes.c_int(0b00000010))
         
         # Calculate and set buffer size
-        num_samples = int(sampling_freq * (acquisition_time_ms / 1000))
+        num_samples = int(sampling_freq * (acquisition_time_ms / 1800))
         self.dwf.FDwfAnalogInBufferSizeSet(self.device_handle, ctypes.c_int(num_samples))
         
         return num_samples

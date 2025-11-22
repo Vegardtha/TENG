@@ -24,13 +24,13 @@ def main():
     
     # Configure your experiment
     config = ExperimentConfig(
-        name="MyTest",
+        name="Testingsaving",
         description="TENG impact testing",
         
         motor=MotorConfig(
             port=arduino_port,          # Auto-detected!
             num_cycles=5,               # How many impacts
-            max_speed=2000,             # Impact speed (steps/sec)
+            max_speed=4000,             # Impact speed (steps/sec)
             acceleration=4000,          # Acceleration (steps/sec²)
             dwell_time=0,            # Wait at impact position (ms)
             slow_speed=100,             # Return speed (steps/sec)
@@ -41,7 +41,7 @@ def main():
             sampling_frequency=2e6,     # 2 MHz
             acquisition_time_ms=30,     # 30 ms recording
             amplitude_range=5,         # ±5V
-            trigger_level=0.5           # Start recording at 0.5V
+            trigger_level=0.4           # Start recording at 0.2V
         ),
         
         save_plots=True,
