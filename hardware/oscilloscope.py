@@ -145,9 +145,11 @@ class OscilloscopeController:
         # Set DIO as output (for trigger signal to Arduino)
         self.dwf.FDwfDigitalIOOutputEnableSet(self.device_handle, ctypes.c_int(0b00000010))
         
-        # Calculate and set buffer size
-        num_samples = int(sampling_freq * (acquisition_time_ms / 1800))
+        # Calculate and set buffer size - FIXED: divide by 1000, not 1800!
+        num_samples = int(sampling_freq * (acquisition_time_ms / 1000))
         self.dwf.FDwfAnalogInBufferSizeSet(self.device_handle, ctypes.c_int(num_samples))
+        
+        print(f"✓ Buffer configured: {num_samples:,} samples ({acquisition_time_ms} ms @ {sampling_freq/1e6:.1f} MHz)")
         
         return num_samples
     

@@ -130,6 +130,18 @@ class TENGExperiment:
             self.config.oscilloscope.sampling_frequency
         )
         
+        # Trim trailing zeros if enabled
+        if self.config.trim_trailing_zeros:
+            # Find last non-zero value (with small threshold for noise)
+            threshold = 1e-6
+            non_zero_indices = np.where(np.abs(voltage_data) > threshold)[0]
+            if len(non_zero_indices) > 0:
+                last_data_idx = non_zero_indices[-1] + 1  # Include the last non-zero sample
+                voltage_data = voltage_data[:last_data_idx]
+                timestamp = timestamp[:last_data_idx]
+                actual_duration = timestamp[-1]
+                print(f"  ✓ Trimmed to {len(voltage_data):,} samples ({actual_duration:.2f} ms actual signal)")
+        
         # Create DataFrame
         df = pd.DataFrame({
             'Timestamp_ms': timestamp,

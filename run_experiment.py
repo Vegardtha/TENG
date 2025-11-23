@@ -38,14 +38,15 @@ def main():
         ),
         
         oscilloscope=OscilloscopeConfig(
-            sampling_frequency=2e6,     # 2 MHz
-            acquisition_time_ms=30,     # 30 ms recording
-            amplitude_range=5,         # ±5V
-            trigger_level=0.4           # Start recording at 0.2V
+            sampling_frequency=500e3,   # 500 kHz
+            acquisition_time_ms=20,     # 20 ms buffer (max recording window)
+            amplitude_range=5,          # ±5V
+            trigger_level=0.2           # Start recording at 0.2V
         ),
         
         save_plots=True,
-        plot_during_acquisition=False
+        plot_during_acquisition=False,
+        trim_trailing_zeros=True        
     )
     
     # OPTIONAL: Upload firmware with these motor settings

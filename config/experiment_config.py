@@ -60,6 +60,7 @@ class ExperimentConfig:
     output_dir: str = "experiments"
     save_plots: bool = True
     plot_during_acquisition: bool = False  # Real-time plotting (slower)
+    trim_trailing_zeros: bool = True  # Remove trailing zeros from saved data
     
     def __post_init__(self):
         """Initialize sub-configurations if not provided"""
