@@ -24,24 +24,24 @@ def main():
     
     # Configure your experiment
     config = ExperimentConfig(
-        name="Testingsaving",
+        name="beltTeng2",
         description="TENG impact testing",
         
         motor=MotorConfig(
             port=arduino_port,          # Auto-detected!
             num_cycles=5,               # How many impacts
-            max_speed=4000,             # Impact speed (steps/sec)
-            acceleration=4000,          # Acceleration (steps/sec²)
+            max_speed=1000,             # Impact speed (steps/sec)
+            acceleration=2000,          # Acceleration (steps/sec²)
             dwell_time=0,            # Wait at impact position (ms)
             slow_speed=100,             # Return speed (steps/sec)
             sleep_time=3000             # Delay between cycles (ms)
         ),
         
         oscilloscope=OscilloscopeConfig(
-            sampling_frequency=500e3,   # 500 kHz
-            acquisition_time_ms=20,     # 20 ms buffer (max recording window)
-            amplitude_range=5,          # ±5V
-            trigger_level=0.2           # Start recording at 0.2V
+            sampling_frequency=2000e3,   # 2 MHz
+            acquisition_time_ms=30,     # 30 ms buffer (max recording window)
+            amplitude_range=50,         # ±25V (Range is peak-to-peak)
+            trigger_level=2             # Start recording at 2V
         ),
         
         save_plots=True,
@@ -51,7 +51,7 @@ def main():
     
     # OPTIONAL: Upload firmware with these motor settings
     # Uncomment to generate Arduino code and upload before running experiment
-    upload_firmware_with_config(config.motor, arduino_board="uno")
+    # upload_firmware_with_config(config.motor, arduino_board="uno")
     
     # Run the experiment
     print("="*70)

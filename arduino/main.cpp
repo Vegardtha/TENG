@@ -5,14 +5,15 @@
 #define DIR_PIN 8   // Direction pin
 #define ENA_PIN 7   // Enable pin (optional)
 #define END_STOP_PIN_1 12  // Left end stop switch pin
-#define END_STOP_PIN_2 13  // Right end stop switch pin
+// #define END_STOP_PIN_2 13  // Right end stop switch pin (Removed)
 #define AUTO_TRIGGER_PIN 3 // Digital input to trigger autoCycle()
 
 // Stepper configuration
-#define MAX_SPEED 4000    // Max speed in steps per second
+#define MAX_SPEED 2000    // Max speed in steps per second
 #define ACCELERATION 4000 // Acceleration in steps per second^2
 #define SLOW_SPEED 100    // Slower speed for return movement
 #define SLEEP_TIME 3000   // Delay at the end of autoCycle (in ms)
+#define BACKUP_STEPS 125  // Steps to move back (approx 1.5cm)
 
 // Create stepper instance
 AccelStepper stepper(AccelStepper::DRIVER, PUL_PIN, DIR_PIN);
@@ -22,7 +23,7 @@ void setup() {
     digitalWrite(ENA_PIN, LOW); // Enable driver (active LOW)
 
     pinMode(END_STOP_PIN_1, INPUT_PULLUP);
-    pinMode(END_STOP_PIN_2, INPUT_PULLUP);
+    // pinMode(END_STOP_PIN_2, INPUT_PULLUP); // Removed
     pinMode(AUTO_TRIGGER_PIN, INPUT); // Trigger pin for autoCycle()
 
     stepper.setPinsInverted(true, false, false);
@@ -40,16 +41,9 @@ void moveStepper(int steps) {
     unsigned long startTime = millis();
 
     while (stepper.distanceToGo() != 0) {
-        if (steps < 0 && digitalRead(END_STOP_PIN_1) == HIGH) {
+        if (steps < 0 && digitalRead(END_STOP_PIN_1) == LOW) {
             Serial.println("End stop 1 (left) triggered! Stopping negative movement.");
             stepper.stop();
-            return;
-        }
-
-        if (steps > 0 && digitalRead(END_STOP_PIN_2) == HIGH) {
-            Serial.println("End stop 2 (right) triggered! Stopping and resetting position.");
-            stepper.stop();
-            stepper.setCurrentPosition(0);
             return;
         }
 
@@ -71,36 +65,33 @@ void autoCycle() {
 
     stepper.setMaxSpeed(MAX_SPEED);
     stepper.setAcceleration(ACCELERATION);
-    stepper.move(-104);  // Move only ~100 steps
+    stepper.move(-130);  // Move only ~100 steps
 
     while (stepper.distanceToGo() != 0) {
         stepper.run();
 
-        if (digitalRead(END_STOP_PIN_1) == HIGH) {
+        if (digitalRead(END_STOP_PIN_1) == LOW) {
             Serial.println("End stop 1 reached. Stopping early.");
             stepper.stop();
             break;
         }
     }
 
+
     Serial.println("Waiting 1000ms...");
     delay(1000);
 
-    Serial.println("Moving back slowly to end stop 2...");
+    Serial.println("Moving back slowly...");
     stepper.setMaxSpeed(SLOW_SPEED);
-    stepper.move(100000);  // Large forward move
+    stepper.move(BACKUP_STEPS);  // Move back fixed distance
 
-    while (true) {
+    while (stepper.distanceToGo() != 0) {
         stepper.run();
-
-        if (digitalRead(END_STOP_PIN_2) == HIGH) {
-            Serial.println("End stop 2 reached. Stopping and disabling stepper.");
-            stepper.stop();
-            stepper.setCurrentPosition(0);
-            digitalWrite(ENA_PIN, HIGH);  // Disable driver
-            break;
-        }
     }
+
+    Serial.println("Return complete. Resetting position and disabling stepper.");
+    stepper.setCurrentPosition(0);
+    digitalWrite(ENA_PIN, HIGH);  // Disable driver
 
     Serial.print("Sleeping for ");
     Serial.print(SLEEP_TIME);

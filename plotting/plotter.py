@@ -341,7 +341,7 @@ def plot_missing_cycles_visualization(missing_cycles, existing_cycles, output_di
 
 
 def main():
-    experiment_path = "/Users/vegardhaugerud/DokumenterLokalt/Data/MyTest_20251121_182909"
+    experiment_path = "/home/troll1234/Documents/TENG/TENG/experiments/newsetup_20251125_110644"
     
     # Create a directory for plots inside the experiment folder
     plots_dir = os.path.join(experiment_path, "plots_analysis")
@@ -418,23 +418,23 @@ def main():
 
     # 1. Plot all overlaid
     print("\nGenerating full overlay plot...")
-    #plot_overlay(cycles, plots_dir, title_suffix="(All Cycles)", filename_suffix="all")
+    plot_overlay(cycles, plots_dir, title_suffix="(All Cycles)", filename_suffix="all")
     
     # 2. Plot in chunks of 500
     print("\nGenerating 500-cycle chunk plots...")
-    #plot_chunks(cycles, plots_dir, chunk_size=500)
+    plot_chunks(cycles, plots_dir, chunk_size=500)
     
     # 3. Plot in chunks of 1000
     print("\nGenerating 1000-cycle chunk plots...")
-    #plot_chunks(cycles, plots_dir, chunk_size=1000)
+    plot_chunks(cycles, plots_dir, chunk_size=1000)
     
     # 4. Statistical Analysis
     print("\nPerforming statistical analysis...")
-    #analyze_statistics(cycles, plots_dir)
+    analyze_statistics(cycles, plots_dir)
     
     # 5. Plot averaged groups of 500 cycles
     print("\nGenerating averaged waveform plot (500-cycle groups)...")
-    #plot_averaged_groups(cycles, plots_dir, group_size=500)
+    plot_averaged_groups(cycles, plots_dir, group_size=500)
     
     print("\nDone! Check the 'plots_analysis' folder inside the experiment directory.")
 
