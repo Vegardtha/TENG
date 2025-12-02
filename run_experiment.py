@@ -24,12 +24,12 @@ def main():
     
     # Configure your experiment
     config = ExperimentConfig(
-        name="beltTeng2",
+        name="LongBeltTest",
         description="TENG impact testing",
         
         motor=MotorConfig(
             port=arduino_port,          # Auto-detected!
-            num_cycles=5,               # How many impacts
+            num_cycles=7200,               # How many impacts
             max_speed=1000,             # Impact speed (steps/sec)
             acceleration=2000,          # Acceleration (steps/sec²)
             dwell_time=0,            # Wait at impact position (ms)
@@ -38,10 +38,10 @@ def main():
         ),
         
         oscilloscope=OscilloscopeConfig(
-            sampling_frequency=2000e3,   # 2 MHz
+            sampling_frequency=500e3,   # 0.5 MHz
             acquisition_time_ms=30,     # 30 ms buffer (max recording window)
             amplitude_range=50,         # ±25V (Range is peak-to-peak)
-            trigger_level=2             # Start recording at 2V
+            trigger_level=0.5             # Start recording at 2V
         ),
         
         save_plots=True,

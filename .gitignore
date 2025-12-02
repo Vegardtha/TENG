@@ -5,3 +5,4 @@ simplerun
 __pycache__/
 experiments/
 arduino_platformio/
+noise_testing/tests/

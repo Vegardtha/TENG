@@ -341,7 +341,7 @@ def plot_missing_cycles_visualization(missing_cycles, existing_cycles, output_di
 
 
 def main():
-    experiment_path = "/home/troll1234/Documents/TENG/TENG/experiments/newsetup_20251125_110644"
+    experiment_path = "/home/troll1234/Documents/TENG/TENG/experiments/LongBeltTest_20251201_172747"
     
     # Create a directory for plots inside the experiment folder
     plots_dir = os.path.join(experiment_path, "plots_analysis")

@@ -8,7 +8,10 @@ import numpy as np
 import ctypes
 from sys import platform
 from os import sep
+import sys
+import os
 from utils.dwfconstants import *
+
 
 
 class OscilloscopeController:
@@ -60,6 +63,8 @@ class OscilloscopeController:
         """Disconnect and reset the device"""
         if self.is_connected and self.device_handle:
             self.dwf.FDwfAnalogInReset(self.device_handle)
+            self.dwf.FDwfDeviceClose(self.device_handle)
+            self.device_handle = None
             self.is_connected = False
             print("✓ Oscilloscope disconnected")
     

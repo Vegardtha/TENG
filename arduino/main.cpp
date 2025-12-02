@@ -72,7 +72,7 @@ void autoCycle() {
 
         if (digitalRead(END_STOP_PIN_1) == LOW) {
             Serial.println("End stop 1 reached. Stopping early.");
-            stepper.stop();
+            stepper.setCurrentPosition(stepper.currentPosition()); // Immediate stop
             break;
         }
     }
