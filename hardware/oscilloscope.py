@@ -57,7 +57,7 @@ class OscilloscopeController:
         self.dwf.FDwfDeviceOpen(ctypes.c_int(-1), ctypes.byref(device_handle))
         self.device_handle = device_handle
         self.is_connected = True
-        print("✓ Oscilloscope connected")
+
         
     def disconnect(self):
         """Disconnect and reset the device"""

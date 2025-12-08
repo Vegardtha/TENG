@@ -3,8 +3,7 @@ TENG Experiment Runner - SIMPLE VERSION
 Just configure your experiment settings and run!
 """
 
-from utils import TENGExperiment, find_arduino_port, upload_firmware_with_config
-from config import ExperimentConfig, MotorConfig, OscilloscopeConfig
+from utils import TENGExperiment, ExperimentConfig, OscilloscopeConfig
 
 
 # ============================================================================
@@ -12,54 +11,28 @@ from config import ExperimentConfig, MotorConfig, OscilloscopeConfig
 # ============================================================================
 
 def main():
-    # Auto-detect Arduino port
-    print("Searching for Arduino...")
-    arduino_port = find_arduino_port()
-    
-    if not arduino_port:
-        print("⚠ Could not auto-detect Arduino port")
-        arduino_port = "/dev/cu.usbserial-0001"  # Change this if auto-detect fails
-    else:
-        print(f"✓ Found Arduino: {arduino_port}\n")
-    
     # Configure your experiment
     config = ExperimentConfig(
         name="LongBeltTest",
         description="TENG impact testing",
-        
-        motor=MotorConfig(
-            port=arduino_port,          # Auto-detected!
-            num_cycles=7200,               # How many impacts
-            max_speed=1000,             # Impact speed (steps/sec)
-            acceleration=2000,          # Acceleration (steps/sec²)
-            dwell_time=0,            # Wait at impact position (ms)
-            slow_speed=100,             # Return speed (steps/sec)
-            sleep_time=3000             # Delay between cycles (ms)
-        ),
+        num_acquisitions=2,  # How many data acquisitions to record
         
         oscilloscope=OscilloscopeConfig(
             sampling_frequency=500e3,   # 0.5 MHz
-            acquisition_time_ms=30,     # 30 ms buffer (max recording window)
+            acquisition_time_ms=15,     # 30 ms buffer (max recording window)
             amplitude_range=50,         # ±25V (Range is peak-to-peak)
-            trigger_level=0.5             # Start recording at 2V
+            trigger_level=0.5,          # Start recording at 0.5V
+            channel=0                   # Oscilloscope channel (0=Ch1, 1=Ch2)
         ),
         
-        save_plots=True,
-        plot_during_acquisition=False,
-        trim_trailing_zeros=True        
+        save_plots=True
     )
-    
-    # OPTIONAL: Upload firmware with these motor settings
-    # Uncomment to generate Arduino code and upload before running experiment
-    # upload_firmware_with_config(config.motor, arduino_board="uno")
     
     # Run the experiment
     print("="*70)
-    print("STARTING EXPERIMENT")
-    print("="*70)
+    print("STARTING EXPERIMENT:")
     print(f"Name: {config.name}")
-    print(f"Cycles: {config.motor.num_cycles}")
-    print(f"Arduino: {config.motor.port}")
+    print(f"Acquisitions: {config.num_acquisitions}")
     print("="*70 + "\n")
     
     experiment = TENGExperiment(config)

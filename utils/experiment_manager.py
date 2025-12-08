@@ -1,6 +1,6 @@
 """
 TENG Experiment Manager
-Main experiment class that coordinates motor and oscilloscope
+Oscilloscope data acquisition for TENG experiments
 """
 
 import pandas as pd
@@ -11,18 +11,17 @@ import time
 from datetime import datetime
 from .dwfconstants import trigcondRisingPositive, trigcondFallingNegative
 
-from hardware import MotorController, OscilloscopeController
+from hardware import OscilloscopeController
 
 
 class TENGExperiment:
     """
-    Manages complete TENG experiment: motor control + oscilloscope acquisition
+    Manages TENG data acquisition with triggered oscilloscope recording
     """
     
     def __init__(self, config):
         """Initialize experiment with configuration"""
         self.config = config
-        self.motor = None
         self.oscilloscope = None
         self.output_dir = None
         self.results = []
@@ -32,21 +31,12 @@ class TENGExperiment:
         
         # Create output directory
         self.output_dir = self.config.get_output_directory()
-        print(f"\n✓ Output directory: {self.output_dir}")
+        print(f"Output directory: {self.output_dir}")
         
         # Save configuration
         self.config.save_config_to_file(self.output_dir)
         
-        # Initialize motor controller
-        print("\n--- Motor Controller ---")
-        self.motor = MotorController(
-            port=self.config.motor.port,
-            baudrate=self.config.motor.baudrate
-        )
-        self.motor.connect()
-        
         # Initialize oscilloscope
-        print("\n--- Oscilloscope ---")
         self.oscilloscope = OscilloscopeController()
         self.oscilloscope.connect()
         
@@ -74,9 +64,9 @@ class TENGExperiment:
         )
 
         
-    def arm_acquisition(self, cycle_num):
-        """Arm oscilloscope for data acquisition (called before motor impact)"""
-        print(f"\n  → Arming oscilloscope (cycle {cycle_num})...")
+    def acquire_single(self, acquisition_num):
+        """Perform a single triggered data acquisition"""
+        print(f"\nAcquisition {acquisition_num}/{self.config.num_acquisitions} - Waiting for trigger...")
         
         # Start acquisition in triggered mode - will wait for trigger event
         self.oscilloscope.dwf.FDwfAnalogInConfigure(self.oscilloscope.device_handle, 
@@ -87,18 +77,9 @@ class TENGExperiment:
         self.oscilloscope.dwf.FDwfDigitalIOOutputSet(self.oscilloscope.device_handle, 
                                                       ctypes.c_int(0b00000010))
         
-        print(f"  ✓ Oscilloscope armed and waiting for trigger...")
-        
-        # Store the cycle number for retrieval later
-        self._current_cycle = cycle_num
-    
-    def retrieve_acquisition(self, cycle_num):
-        """Retrieve acquired data (called after motor impact)"""
-        print(f"\n  → Retrieving data (cycle {cycle_num})...")
-        
         # Wait for acquisition to complete
         sts = ctypes.c_byte()
-        timeout = 10  # 10 second timeout
+        timeout = 30  # 30 second timeout
         start_time = time.time()
         
         while True:
@@ -130,18 +111,6 @@ class TENGExperiment:
             self.config.oscilloscope.sampling_frequency
         )
         
-        # Trim trailing zeros if enabled
-        if self.config.trim_trailing_zeros:
-            # Find last non-zero value (with small threshold for noise)
-            threshold = 1e-6
-            non_zero_indices = np.where(np.abs(voltage_data) > threshold)[0]
-            if len(non_zero_indices) > 0:
-                last_data_idx = non_zero_indices[-1] + 1  # Include the last non-zero sample
-                voltage_data = voltage_data[:last_data_idx]
-                timestamp = timestamp[:last_data_idx]
-                actual_duration = timestamp[-1]
-                print(f"  ✓ Trimmed to {len(voltage_data):,} samples ({actual_duration:.2f} ms actual signal)")
-        
         # Create DataFrame
         df = pd.DataFrame({
             'Timestamp_ms': timestamp,
@@ -150,46 +119,21 @@ class TENGExperiment:
         
         # Calculate peak voltage
         peak_voltage = np.max(np.abs(voltage_data))
-        print(f"  ✓ Data acquired - Peak voltage: {peak_voltage:.2f} V")
         
         # Save data
-        csv_path = f"{self.output_dir}/cycle_{cycle_num:03d}.csv"
+        csv_path = f"{self.output_dir}/acquisition_{acquisition_num:04d}.csv"
         df.to_csv(csv_path, index=False)
-        print(f"  ✓ Saved: {csv_path}")
+        print(f"✓ Peak: {peak_voltage:.2f} V - Saved: acquisition_{acquisition_num:04d}.csv")
         
         # Store result
         self.results.append({
-            'cycle': cycle_num,
+            'acquisition': acquisition_num,
             'timestamp': datetime.now(),
             'peak_voltage': peak_voltage,
             'data': df
         })
-        
-        # Plot if enabled
-        if self.config.plot_during_acquisition:
-            self._plot_waveform(df, cycle_num, peak_voltage)
             
         return df
-    
-    def _plot_waveform(self, df, cycle_num, peak_voltage):
-        """Plot waveform for a single acquisition"""
-        plt.figure(figsize=(10, 5))
-        plt.plot(df['Timestamp_ms'], df['Voltage_V'], linewidth=0.8)
-        plt.axhline(y=self.config.oscilloscope.trigger_level, 
-                   color='r', linestyle='--', label='Trigger Level', alpha=0.7)
-        plt.xlabel("Time (ms)")
-        plt.ylabel("Voltage (V)")
-        plt.title(f"Cycle {cycle_num} - Peak: {peak_voltage:.2f} V")
-        plt.legend()
-        plt.grid(alpha=0.3)
-        plt.tight_layout()
-        
-        if self.config.save_plots:
-            plot_path = f"{self.output_dir}/cycle_{cycle_num:03d}.png"
-            plt.savefig(plot_path, dpi=150)
-            plt.close()
-        else:
-            plt.show()
     
     def run(self):
         """Execute complete experiment"""
@@ -197,20 +141,12 @@ class TENGExperiment:
             # Setup hardware
             self.setup()
             
-            # Run experiment cycles with synchronized acquisition
-            # Arm oscilloscope BEFORE impact, retrieve data AFTER impact
-            def pre_callback(cycle_num):
-                self.arm_acquisition(cycle_num)
+            print(f"\n{'='*70}")
+
             
-            def post_callback(cycle_num):
-                self.retrieve_acquisition(cycle_num)
-            
-            self.motor.run_experiment_cycles(
-                num_cycles=self.config.motor.num_cycles,
-                pre_cycle_callback=pre_callback,
-                post_cycle_callback=post_callback,
-                cycle_delay=self.config.motor.cycle_delay
-            )
+            # Run acquisitions
+            for acquisition_num in range(1, self.config.num_acquisitions + 1):
+                self.acquire_single(acquisition_num)
             
             # Generate summary
             self._generate_summary()
@@ -227,31 +163,29 @@ class TENGExperiment:
     
     def _generate_summary(self):
         """Generate experiment summary with statistics and plots"""
-
-        print("SUMMARY:")
-
+        print("\n" + "="*70)
+        print("SUMMARY")
+        print("="*70)
         
         if not self.results:
             print("⚠ No data collected")
             return
         
         # Extract statistics
-        cycles = [r['cycle'] for r in self.results]
+        acquisitions = [r['acquisition'] for r in self.results]
         peak_voltages = [r['peak_voltage'] for r in self.results]
         
         # Summary statistics
         summary_df = pd.DataFrame({
-            'Cycle': cycles,
+            'Acquisition': acquisitions,
             'Peak_Voltage_V': peak_voltages
         })
         
         summary_path = f"{self.output_dir}/experiment_summary.csv"
         summary_df.to_csv(summary_path, index=False)
-        print(f"\n✓ Summary saved: {summary_path}")
         
         # Statistics
-        print("\n--- Statistics ---")
-        print(f"Total Cycles: {len(cycles)}")
+        print(f"Total Acquisitions: {len(acquisitions)}")
         print(f"Mean Peak Voltage: {np.mean(peak_voltages):.2f} V")
         print(f"Std Dev: {np.std(peak_voltages):.2f} V")
         print(f"Max Peak: {np.max(peak_voltages):.2f} V")
@@ -259,19 +193,19 @@ class TENGExperiment:
         
         # Generate summary plots
         if self.config.save_plots:
-            self._plot_summary(cycles, peak_voltages)
+            self._plot_summary(acquisitions, peak_voltages)
     
-    def _plot_summary(self, cycles, peak_voltages):
+    def _plot_summary(self, acquisitions, peak_voltages):
         """Generate summary plots"""
         fig, axes = plt.subplots(2, 1, figsize=(12, 8))
         
-        # Peak voltage over cycles
-        axes[0].plot(cycles, peak_voltages, 'o-', linewidth=2, markersize=6)
+        # Peak voltage over acquisitions
+        axes[0].plot(acquisitions, peak_voltages, 'o-', linewidth=2, markersize=6)
         axes[0].axhline(y=np.mean(peak_voltages), color='r', linestyle='--', 
                        label=f'Mean: {np.mean(peak_voltages):.2f} V', alpha=0.7)
-        axes[0].set_xlabel("Cycle Number")
+        axes[0].set_xlabel("Acquisition Number")
         axes[0].set_ylabel("Peak Voltage (V)")
-        axes[0].set_title("Peak Voltage vs Cycle Number")
+        axes[0].set_title("Peak Voltage vs Acquisition Number")
         axes[0].legend()
         axes[0].grid(alpha=0.3)
         
@@ -289,7 +223,6 @@ class TENGExperiment:
         summary_plot_path = f"{self.output_dir}/experiment_summary.png"
         plt.savefig(summary_plot_path, dpi=150)
         plt.close()
-        print(f"✓ Summary plots saved: {summary_plot_path}")
         
         # Overlay plot of all waveforms
         self._plot_all_waveforms_overlay()
@@ -300,16 +233,16 @@ class TENGExperiment:
         
         for result in self.results:
             df = result['data']
-            cycle = result['cycle']
+            acq = result['acquisition']
             plt.plot(df['Timestamp_ms'], df['Voltage_V'], 
-                    alpha=0.6, linewidth=0.8, label=f"Cycle {cycle}")
+                    alpha=0.6, linewidth=0.8, label=f"Acq {acq}")
         
         plt.xlabel("Time (ms)")
         plt.ylabel("Voltage (V)")
-        plt.title(f"All Waveforms Overlay - {len(self.results)} Cycles")
+        plt.title(f"All Waveforms Overlay - {len(self.results)} Acquisitions")
         plt.grid(alpha=0.3)
         
-        # Only show legend if not too many cycles
+        # Only show legend if not too many acquisitions
         if len(self.results) <= 10:
             plt.legend(loc='best', fontsize=8)
         
@@ -317,13 +250,12 @@ class TENGExperiment:
         overlay_path = f"{self.output_dir}/all_waveforms_overlay.png"
         plt.savefig(overlay_path, dpi=150)
         plt.close()
-        print(f"✓ Overlay plot saved: {overlay_path}")
+        print(f"Plots saved: experiment_summary.png, all_waveforms_overlay.png")
     
     def cleanup(self):
         """Disconnect hardware"""
-        if self.motor:
-            self.motor.disconnect()
         if self.oscilloscope:
             self.oscilloscope.disconnect()
             
-        print("✓ Experiment complete\n")
+        print("EXPERIMENT COMPLETE")
+        print("="*70 + "\n")

@@ -1,30 +1,11 @@
 """
 Experiment Configuration for TENG Testing
-Centralized configuration for motor control and oscilloscope settings
+Centralized configuration for oscilloscope settings and data acquisition
 """
 
 from dataclasses import dataclass
 from datetime import datetime
 import os
-
-
-@dataclass
-class MotorConfig:
-    """Motor control configuration"""
-    # Serial connection
-    port: str = "/dev/cu.usbserial-0001"  # Update with your Arduino port
-    baudrate: int = 115200
-    
-    # Experiment parameters
-    num_cycles: int = 5  # Number of impact cycles
-    cycle_delay: float = 0.0  # Additional delay between cycles (seconds)
-    
-    # Motor physical settings (will be written to Arduino)
-    max_speed: int = 2000          # Maximum speed (steps/sec)
-    acceleration: int = 4000       # Acceleration (steps/sec²)
-    slow_speed: int = 100          # Return speed (steps/sec)
-    dwell_time: int = 1000         # Wait time at impact position (ms)
-    sleep_time: int = 3000         # Delay after cycle completes (ms)
 
 
 @dataclass
@@ -51,21 +32,17 @@ class ExperimentConfig:
     # Experiment identification
     name: str = "TENG_Test"
     description: str = "Triboelectric nanogenerator impact testing"
+    num_acquisitions: int = 10  # Number of data acquisitions to record
     
     # Hardware configurations
-    motor: MotorConfig = None
     oscilloscope: OscilloscopeConfig = None
     
     # Data output
     output_dir: str = "experiments"
     save_plots: bool = True
-    plot_during_acquisition: bool = False  # Real-time plotting (slower)
-    trim_trailing_zeros: bool = True  # Remove trailing zeros from saved data
     
     def __post_init__(self):
         """Initialize sub-configurations if not provided"""
-        if self.motor is None:
-            self.motor = MotorConfig()
         if self.oscilloscope is None:
             self.oscilloscope = OscilloscopeConfig()
     
@@ -97,15 +74,8 @@ class ExperimentConfig:
             
             f.write(f"Experiment: {self.name}\n")
             f.write(f"Description: {self.description}\n")
-            f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-            
-            f.write("-"*70 + "\n")
-            f.write("MOTOR SETTINGS\n")
-            f.write("-"*70 + "\n")
-            f.write(f"Serial Port: {self.motor.port}\n")
-            f.write(f"Baudrate: {self.motor.baudrate}\n")
-            f.write(f"Number of Cycles: {self.motor.num_cycles}\n")
-            f.write(f"Cycle Delay: {self.motor.cycle_delay} s\n\n")
+            f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Number of Acquisitions: {self.num_acquisitions}\n\n")
             
             f.write("-"*70 + "\n")
             f.write("OSCILLOSCOPE SETTINGS\n")
@@ -124,17 +94,14 @@ class ExperimentConfig:
             f.write("-"*70 + "\n")
             f.write(f"Output Directory: {directory}\n")
             f.write(f"Save Plots: {self.save_plots}\n")
-            f.write(f"Real-time Plotting: {self.plot_during_acquisition}\n")
             
-        print(f"✓ Configuration saved to: {config_path}")
     
     def __str__(self):
         """String representation for printing"""
         return (
             f"Experiment: {self.name}\n"
-            f"Cycles: {self.motor.num_cycles}\n"
+            f"Acquisitions: {self.num_acquisitions}\n"
             f"Sampling: {self.oscilloscope.sampling_frequency/1e6:.1f} MHz\n"
             f"Acquisition: {self.oscilloscope.acquisition_time_ms} ms\n"
             f"Voltage Range: ±{self.oscilloscope.amplitude_range} V"
         )
-
