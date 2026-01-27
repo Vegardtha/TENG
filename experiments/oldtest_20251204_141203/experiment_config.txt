@@ -1,0 +1,34 @@
+======================================================================
+TENG EXPERIMENT CONFIGURATION
+======================================================================
+
+Experiment: oldtest
+Description: TENG impact testing
+Timestamp: 2025-12-04 14:12:03
+
+----------------------------------------------------------------------
+MOTOR SETTINGS
+----------------------------------------------------------------------
+Serial Port: COM6
+Baudrate: 115200
+Number of Cycles: 5
+Cycle Delay: 0.0 s
+
+----------------------------------------------------------------------
+OSCILLOSCOPE SETTINGS
+----------------------------------------------------------------------
+Sampling Frequency: 0.5 MHz
+Acquisition Time: 30 ms
+Channel: 1
+Voltage Range: ±50 V
+Voltage Offset: 0.0 V
+Trigger Channel: 1
+Trigger Level: 1 V
+Trigger Edge: rising
+
+----------------------------------------------------------------------
+DATA OUTPUT
+----------------------------------------------------------------------
+Output Directory: experiments\oldtest_20251204_141203
+Save Plots: True
+Real-time Plotting: False

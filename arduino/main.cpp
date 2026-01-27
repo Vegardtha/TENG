@@ -4,7 +4,7 @@
 #define PUL_PIN 9   // Step (Pulse) pin
 #define DIR_PIN 8   // Direction pin
 #define ENA_PIN 7   // Enable pin (optional)
-#define END_STOP_PIN_1 12  // Left end stop switch pin
+#define END_STOP_PIN_1 5  // Left end stop switch pin
 // #define END_STOP_PIN_2 13  // Right end stop switch pin (Removed)
 #define AUTO_TRIGGER_PIN 3 // Digital input to trigger autoCycle()
 
@@ -65,7 +65,7 @@ void autoCycle() {
 
     stepper.setMaxSpeed(MAX_SPEED);
     stepper.setAcceleration(ACCELERATION);
-    stepper.move(-130);  // Move only ~100 steps
+    stepper.move(-135);  // Move only ~100 steps
 
     while (stepper.distanceToGo() != 0) {
         stepper.run();

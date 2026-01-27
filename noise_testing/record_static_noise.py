@@ -10,6 +10,7 @@ from sys import platform
 from os import sep
 from datetime import datetime
 import os
+from scipy import signal
 
 
 def _initialize_dwf_library():
@@ -31,7 +32,45 @@ def _initialize_dwf_library():
         return ctypes.cdll.LoadLibrary("libdwf.so")
 
 
-def record_static_noise(duration_seconds=5, sampling_frequency=500e3, 
+def apply_50hz_notch_filter(voltage_data, sampling_frequency, harmonics=3):
+    """
+    Apply notch filter to remove 50Hz power line noise and its harmonics
+    
+    Parameters:
+    -----------
+    voltage_data : array-like
+        Input voltage signal
+    sampling_frequency : float
+        Sampling frequency in Hz
+    harmonics : int
+        Number of harmonics to filter (default: 3, filters 50Hz, 100Hz, 150Hz)
+    
+    Returns:
+    --------
+    filtered_data : np.ndarray
+        Filtered voltage signal
+    """
+    filtered_data = voltage_data.copy()
+    
+    # Quality factor for the notch filter (higher Q = narrower notch)
+    # Lower Q = wider notch, better for catching frequency variations
+    Q = 10.0
+    
+    # Apply notch filter for 50Hz and its harmonics
+    for i in range(1, harmonics + 1):
+        freq = 50.0 * i  # 50Hz, 100Hz, 150Hz, etc.
+        
+        # Design notch filter
+        b, a = signal.iirnotch(freq, Q, sampling_frequency)
+        
+        # Apply filter
+        filtered_data = signal.filtfilt(b, a, filtered_data)
+        print(f"  Applied {freq:.0f}Hz notch filter")
+    
+    return filtered_data
+
+
+def record_static_noise(duration_seconds=10, sampling_frequency=500e3, 
                         amplitude_range=50, channel=0):
     """Record noise from oscilloscope using record mode for long acquisitions"""
     
@@ -126,14 +165,23 @@ def main():
         channel=0
     )
     
+    # Apply 50Hz notch filter
+    print("\nApplying 50Hz notch filter...")
+    df['Voltage_V'] = apply_50hz_notch_filter(
+        df['Voltage_V'].values, 
+        sampling_frequency=500e3,
+        harmonics=3  # Filter 50Hz, 100Hz, 150Hz
+    )
+    
     # Save to CSV
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = os.path.dirname(os.path.abspath(__file__))
-    filename = f"static_noise_{timestamp}.csv"
+    filename = f"PE_static_noise_{timestamp}.csv"
     filepath = os.path.join(output_dir, filename)
     
     df.to_csv(filepath, index=False)
     print(f"✓ Saved: {filepath}")
+    print(f"  (Filtered data only)")
 
 
 if __name__ == "__main__":

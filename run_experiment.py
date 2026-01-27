@@ -18,18 +18,20 @@ def main():
     
     if not arduino_port:
         print("⚠ Could not auto-detect Arduino port")
-        arduino_port = "/dev/cu.usbserial-0001"  # Change this if auto-detect fails
+        arduino_port = "COM6"  # Manually set to Arduino Uno on COM6
     else:
         print(f"✓ Found Arduino: {arduino_port}\n")
+        # Override if auto-detect is wrong (e.g., finds Bluetooth instead of Arduino)
+        arduino_port = "COM6"  # Force to correct port
     
     # Configure your experiment
     config = ExperimentConfig(
-        name="LongBeltTest",
+        name="oldtest",
         description="TENG impact testing",
         
         motor=MotorConfig(
             port=arduino_port,          # Auto-detected!
-            num_cycles=7200,               # How many impacts
+            num_cycles=5,               # How many impacts
             max_speed=1000,             # Impact speed (steps/sec)
             acceleration=2000,          # Acceleration (steps/sec²)
             dwell_time=0,            # Wait at impact position (ms)
@@ -41,7 +43,7 @@ def main():
             sampling_frequency=500e3,   # 0.5 MHz
             acquisition_time_ms=30,     # 30 ms buffer (max recording window)
             amplitude_range=50,         # ±25V (Range is peak-to-peak)
-            trigger_level=0.5             # Start recording at 2V
+            trigger_level=3             # Start recording at 1.5V
         ),
         
         save_plots=True,

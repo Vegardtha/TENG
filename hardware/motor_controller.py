@@ -77,6 +77,7 @@ class MotorController:
             raise ConnectionError("Motor not connected. Call connect() first.")
         
         print("→ Triggering impact cycle...")
+        self.ser.reset_input_buffer()  # Clear any stale data
         self.ser.write(b'1\n')
         self.ser.flush()
         
@@ -84,15 +85,30 @@ class MotorController:
             # Read Arduino output during cycle
             start_time = time.time()
             timeout = 30  # Maximum 30 seconds per cycle
+            last_print_time = start_time
             
             while time.time() - start_time < timeout:
                 if self.ser.in_waiting:
                     msg = self.ser.readline().decode('utf-8', errors='ignore').strip()
                     if msg:
+                        print(f"  Arduino: {msg}")  # DEBUG: Show all messages
                         # Check if cycle completed
                         if "Sleeping" in msg or "Enter new step count" in msg:
+                            print("  ✓ Impact cycle completed")
                             break
-                time.sleep(0.1)
+                
+                # Print status every 2 seconds to show it's still running
+                if time.time() - last_print_time > 2:
+                    elapsed = time.time() - start_time
+                    print(f"  ... waiting for Arduino (buffer: {self.ser.in_waiting} bytes, {elapsed:.1f}s elapsed)")
+                    last_print_time = time.time()
+                    
+                time.sleep(0.05)  # Check more frequently
+            
+            # Check for timeout
+            if time.time() - start_time >= timeout:
+                print(f"  ⚠ WARNING: Timeout after {timeout}s - Arduino may not have responded")
+                print(f"  ⚠ Continuing anyway...")
                 
     def move_steps(self, steps):
         """

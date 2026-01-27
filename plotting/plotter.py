@@ -10,11 +10,22 @@ def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower()
             for text in re.split('([0-9]+)', s)]
 
-def load_cycles(experiment_dir):
-    """Load all cycle CSV files from the experiment directory"""
+def load_cycles(experiment_dir, max_files=None):
+    """
+    Load cycle CSV files from the experiment directory
+    
+    Parameters:
+        experiment_dir: Path to experiment directory
+        max_files: Maximum number of files to load (None = all files)
+    """
     pattern = os.path.join(experiment_dir, "cycle_*.csv")
     files = glob.glob(pattern)
     files.sort(key=natural_sort_key)
+    
+    # Limit number of files if specified
+    if max_files is not None:
+        files = files[:max_files]
+        print(f"Limiting to first {max_files} cycle files")
     
     cycles = []
     for f in files:
@@ -341,10 +352,10 @@ def plot_missing_cycles_visualization(missing_cycles, existing_cycles, output_di
 
 
 def main():
-    experiment_path = "/home/troll1234/Documents/TENG/TENG/experiments/LongBeltTest_20251201_172747"
+    experiment_path = "experiments\Longtest2_20251203_194800"
     
     # Create a directory for plots inside the experiment folder
-    plots_dir = os.path.join(experiment_path, "plots_analysis")
+    plots_dir = os.path.join(experiment_path, "plots_analysis2000")
     os.makedirs(plots_dir, exist_ok=True)
     
     # Check for missing cycles first
@@ -409,7 +420,7 @@ def main():
     print("\n" + "="*70)
     
     print(f"\nLoading data from {experiment_path}...")
-    cycles = load_cycles(experiment_path)
+    cycles = load_cycles(experiment_path, max_files=2000)  # Only load first 2000 files
     print(f"Loaded {len(cycles)} cycles.")
     
     if not cycles:
